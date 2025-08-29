@@ -60,7 +60,7 @@ python src\app.py --device 0 --width 960 --height 540 --record assets\demo.mp4
 - `--headless`: run without opening a window (useful on systems missing OpenCV GUI support; combine with `--record`).
 
 ## Demo
-[Demo](https://github.com/Liorohan10/Hand-Gesture-App/tree/main/assets/demo.mp4)
+![Image](https://github.com/user-attachments/assets/7f3b7dba-fbe5-4e8d-9ec3-b3bc94c8323b)
 
 ## Notes
 - Tested on Windows with a standard integrated webcam. If you have multiple cameras, you can change the device index in `app.py`.
