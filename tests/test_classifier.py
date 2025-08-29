@@ -1,6 +1,12 @@
+"""
+Minimal sanity tests for the rules-based gesture classifier.
+
+These tests use synthetic landmark coordinates to approximate finger states and
+validate that the rules map to the expected labels for the four target gestures.
+"""
 from src.gesture_classifier import classify_gesture
 
-# Synthetic landmarks: very rough, normalized y: smaller = higher
+# Synthetic landmarks: very rough, normalized coords where smaller y = higher on screen
 def make_landmarks(tip_states, thumb_dir="folded"):
     # 21 points, fill with neutral center (0.5, 0.5)
     lm = [(0.5, 0.5) for _ in range(21)]
@@ -8,7 +14,7 @@ def make_landmarks(tip_states, thumb_dir="folded"):
     tips = [8, 12, 16, 20]
     pips = [6, 10, 14, 18]
     mcps = [5, 9, 13, 17]
-    # Set PIPs slightly lower (bigger y) than base
+    # Set PIPs slightly lower (bigger y) than base to emulate finger curvature
     for p in pips:
         lm[p] = (0.5, 0.55)
     # Extended tips above PIP, folded below
@@ -28,6 +34,7 @@ def make_landmarks(tip_states, thumb_dir="folded"):
 
 
 def test_rules():
+    """Smoke-test the core gestures using synthetic landmarks."""
     # Open palm: all extended
     lm = make_landmarks([True, True, True, True], thumb_dir="up")
     assert classify_gesture(lm) == "Open Palm"

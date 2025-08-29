@@ -1,3 +1,10 @@
+"""
+Application entry point.
+
+Captures webcam frames, uses MediaPipe Hands to detect hand landmarks, classifies
+the gesture with a lightweight rules-based classifier, and visualizes the result.
+Supports GUI display or headless logging, and optional recording to a video file.
+"""
 import os
 import cv2
 import numpy as np
@@ -16,6 +23,7 @@ mp_hands = mp.solutions.hands
 
 
 def parse_args():
+    """Parse CLI arguments for device, resolution, recording, and headless mode."""
     parser = argparse.ArgumentParser(description="Real-Time Hand Gesture Recognition")
     parser.add_argument("--device", type=int, default=0, help="Webcam device index (default 0)")
     parser.add_argument("--width", type=int, default=960, help="Capture width")
@@ -26,6 +34,7 @@ def parse_args():
 
 
 def main():
+    """Run the real-time loop: read frames, detect hands, classify, draw, and output."""
     args = parse_args()
 
     cap = cv2.VideoCapture(args.device)
@@ -34,6 +43,7 @@ def main():
 
     writer = None
     if args.record:
+        # Initialize an MP4 writer to save annotated frames to disk
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         writer = cv2.VideoWriter(args.record, fourcc, 20.0, (args.width, args.height))
 
@@ -50,7 +60,8 @@ def main():
                 print("Failed to read from webcam.")
                 break
 
-            frame = cv2.flip(frame, 1)  # mirror for natural UX
+            # Mirror the preview for natural user experience (like a mirror)
+            frame = cv2.flip(frame, 1)
             if frame.shape[1] != args.width or frame.shape[0] != args.height:
                 frame = cv2.resize(frame, (args.width, args.height))
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -61,11 +72,11 @@ def main():
             gesture = "No Hand"
             if results.multi_hand_landmarks:
                 for hand_landmarks in results.multi_hand_landmarks:
-                    # Classify
+                    # Extract normalized (x, y) and classify current gesture
                     landmarks_norm = landmarks_to_xy_norm(hand_landmarks, frame.shape[:2])
                     gesture = classify_gesture(landmarks_norm)
 
-                    # Draw landmarks
+                    # Draw hand landmarks and connections for visual feedback
                     mp_drawing.draw_landmarks(
                         frame,
                         hand_landmarks,
@@ -74,7 +85,7 @@ def main():
                         mp_styles.get_default_hand_connections_style(),
                     )
 
-            # Overlay gesture text
+            # Overlay a label with the current gesture on the frame
             cv2.rectangle(frame, (10, 10), (330, 70), (0, 0, 0), thickness=-1)
             cv2.putText(frame, f"Gesture: {gesture}", (20, 55), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3)
 
@@ -82,7 +93,7 @@ def main():
                 writer.write(frame)
             
             if args.headless:
-                # Print every 15 frames to avoid flooding the console
+                # In headless mode, print periodically to avoid flooding the console
                 frame_count += 1
                 if frame_count % 15 == 0:
                     print(f"Gesture: {gesture}")

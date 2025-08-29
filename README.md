@@ -13,23 +13,34 @@ This Python app recognizes four static hand gestures from a webcam in real time:
 
 It uses MediaPipe Hands for robust, real-time hand landmark detection, and OpenCV for video capture and visualization. A lightweight, rules-based classifier interprets landmark geometry to label gestures.
 
-## Why MediaPipe + OpenCV?
-- MediaPipe Hands provides high-quality, fast hand landmark detection (21 keypoints) that works well on CPUs, enabling real-time inference without training a custom model. It’s battle-tested for real-time HCI tasks and includes tracking for temporal stability.
-- OpenCV offers reliable webcam access, frame processing, and drawing utilities for high-FPS visualization on Windows.
+## Technology & Models Used
+- MediaPipe Hands (Model + Tracking):
+	- Pipeline: a lightweight palm detector followed by a hand landmark regressor that outputs 21 3D landmarks and handedness. It uses TensorFlow Lite with XNNPACK delegate for efficient CPU inference.
+	- Why it fits: robust to lighting/background, works out-of-the-box without custom data collection or training, and maintains temporal consistency via tracking. This is ideal for a time-bound assessment and for static gestures.
+	- Alternatives considered:
+		- Classical CV (skin color thresholding + contours): fragile under varying lighting and skin tones; less robust in cluttered backgrounds.
+		- Custom CNN classifier on raw images: requires a sizeable labeled dataset and training time; brittle to domain shifts; overkill for 4 static poses when landmarks suffice.
+		- YOLO/pose models: can detect hands but lack fine-grained finger joint detail needed for rule-based static pose classification.
+	- Trade-offs: MediaPipe abstracts model complexity and gives stable keypoints; the small downside is a dependency on TF Lite runtime and occasional model downloads on first run.
+- OpenCV: mature, cross-platform capture and visualization with simple APIs and good performance.
+- NumPy: vector math for angles, distances, and geometric rules.
 
 ## Gesture Logic
-The classifier uses normalized landmark positions to determine finger states (extended vs folded) and thumb orientation.
+We classify gestures from MediaPipe’s 21 normalized hand landmarks using geometric rules:
 
-Finger extension is decided via a robust majority vote of three cues:
-- Vertical cue: fingertip y is above PIP y (with a small margin).
-- Radial cue: fingertip is farther from the wrist than the PIP (normalized distance).
-- Joint-angle cue: the PIP joint angle is near-straight (>150°) when extended.
-
-Rules:
-- Open Palm: index/middle/ring/pinky extended (thumb may be relaxed).
-- Fist: all four fingers folded and thumb not pointing up (folded/sideways accepted).
-- Peace (V): index and middle extended; ring and pinky folded; thumb neutral.
-- Thumbs Up: thumb extended upward; other fingers folded.
+- Landmarks used: tips (8,12,16,20), PIPs (6,10,14,18), MCPs (5,9,13,17), thumb (MCP=2, IP=3, tip=4), wrist=0.
+- Finger state (extended vs folded): majority vote of three cues for robustness:
+	- Vertical: tip y < PIP y (with a small margin).
+	- Radial: dist(wrist, tip) > dist(wrist, PIP) + margin.
+	- Joint angle: angle at PIP (MCP–PIP–TIP) > 150°.
+- Thumb orientation: compare vector MCP→TIP to up/down/left/right; if none within 45°, or tip near the palm, treat as folded.
+- Rules:
+	- Open Palm: index/middle/ring/pinky extended (thumb may be relaxed).
+	- Fist: all four folded and thumb not up (folded/sideways accepted).
+	- Peace (V): index + middle extended; ring + pinky folded.
+	- Thumbs Up: thumb up; others folded.
+- Edge cases: when landmarks are missing or heavily occluded, return "Unknown"; cues mitigate rotation; thresholds are conservative to reduce false positives.
+- Possible enhancements: temporal smoothing, handedness-aware thumb logic, adaptive thresholds by hand scale.
 
 ## Install
 Create a virtual environment (recommended) and install dependencies.
@@ -77,3 +88,18 @@ python src\app.py --device 0 --width 960 --height 540 --record assets\demo.mp4
 		 python src\app.py --headless --record assets\demo.mp4
 		 ```
   - If using WSL, run from Windows Python or enable X server.
+
+## Performance Considerations
+- Defaults target real-time CPU performance at 960x540 with `max_num_hands=1`.
+- For higher FPS:
+	- Lower resolution (e.g., 640x360) via `--width`/`--height`.
+	- Keep `model_complexity=0` (already set) for faster inference.
+	- Avoid unnecessary copies; we only convert BGR→RGB once per frame.
+
+## Architecture at a Glance
+1) Capture frame (OpenCV) and mirror for natural UX.
+2) Run MediaPipe Hands to get 21 keypoints and connections.
+3) Convert landmarks to normalized (x, y) pairs.
+4) Compute finger states and thumb orientation via geometric rules.
+5) Map to gesture label; draw landmarks and overlay the label.
+6) Display (or headless print) and optionally record annotated frames.

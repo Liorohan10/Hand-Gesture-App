@@ -1,3 +1,10 @@
+"""
+Gesture classification helpers.
+
+Provides utilities to convert MediaPipe landmarks into simple (x, y) pairs and a
+rules-based classifier to detect Open Palm, Fist, Peace, and Thumbs Up gestures
+from a single hand using normalized 2D geometry.
+"""
 from typing import List, Tuple
 import numpy as np
 
@@ -10,8 +17,8 @@ import numpy as np
 # Pinky: 17 (MCP), 18 (PIP), 19 (DIP), 20 (TIP)
 
 FINGER_TIPS = [8, 12, 16, 20]  # index, middle, ring, pinky tips
-FINGER_PIPS = [6, 10, 14, 18]  # corresponding PIP joints
-FINGER_MCPS = [5, 9, 13, 17]   # corresponding MCP joints
+FINGER_PIPS = [6, 10, 14, 18]  # proximal interphalangeal joints
+FINGER_MCPS = [5, 9, 13, 17]   # metacarpophalangeal joints (base knuckles)
 THUMB_TIP = 4
 THUMB_IP = 3
 THUMB_MCP = 2
@@ -19,10 +26,12 @@ WRIST = 0
 
 
 def _vector(a: Tuple[float, float], b: Tuple[float, float]) -> np.ndarray:
+    """Return 2D vector from a->b in normalized image coords."""
     return np.array([b[0] - a[0], b[1] - a[1]], dtype=np.float32)
 
 
 def _angle_deg(u: np.ndarray, v: np.ndarray) -> float:
+    """Return the angle between vectors u and v in degrees (0..180)."""
     nu = np.linalg.norm(u)
     nv = np.linalg.norm(v)
     if nu == 0 or nv == 0:
@@ -32,16 +41,19 @@ def _angle_deg(u: np.ndarray, v: np.ndarray) -> float:
 
 
 def _dist(a: Tuple[float, float], b: Tuple[float, float]) -> float:
+    """Euclidean distance between two 2D normalized points."""
     return float(np.linalg.norm(np.array(a) - np.array(b)))
 
 
 def _angle_at(center: Tuple[float, float], p1: Tuple[float, float], p2: Tuple[float, float]) -> float:
+    """Angle at 'center' formed by rays to p1 and p2 (in degrees)."""
     v1 = np.array([p1[0] - center[0], p1[1] - center[1]], dtype=np.float32)
     v2 = np.array([p2[0] - center[0], p2[1] - center[1]], dtype=np.float32)
     return _angle_deg(v1, v2)
 
 
 def _is_finger_extended(landmarks: List[Tuple[float, float]], tip_idx: int, pip_idx: int, mcp_idx: int) -> bool:
+    """Decide if a finger is extended using vertical, radial, and angle cues."""
     # Combine multiple cues for robustness across rotations:
     # 1) Vertical cue: tip above PIP (y smaller) by margin.
     tip_y = landmarks[tip_idx][1]
@@ -62,7 +74,7 @@ def _is_finger_extended(landmarks: List[Tuple[float, float]], tip_idx: int, pip_
 
 
 def _thumb_state(landmarks: List[Tuple[float, float]]) -> str:
-    # Determine thumb orientation: up, down, left, right, or folded
+    """Return a coarse thumb orientation: up/down/left/right or folded."""
     wrist = landmarks[WRIST]
     tip = landmarks[THUMB_TIP]
     mcp = landmarks[THUMB_MCP]
@@ -99,8 +111,13 @@ def _thumb_state(landmarks: List[Tuple[float, float]]) -> str:
 
 def classify_gesture(landmarks_norm: List[Tuple[float, float]]) -> str:
     """
-    landmarks_norm: list of (x, y) in image normalized coords [0,1]
-    Returns one of: "Open Palm", "Fist", "Peace", "Thumbs Up", or "Unknown"
+    Classify a single hand gesture from MediaPipe 2D landmarks.
+
+    Args:
+        landmarks_norm: list of (x, y) normalized image coordinates (range ~[0,1]).
+
+    Returns:
+        One of: "Open Palm", "Fist", "Peace", "Thumbs Up", or "Unknown".
     """
     fingers = [
         _is_finger_extended(landmarks_norm, FINGER_TIPS[i], FINGER_PIPS[i], FINGER_MCPS[i])
@@ -129,7 +146,7 @@ def classify_gesture(landmarks_norm: List[Tuple[float, float]]) -> str:
 
 
 def landmarks_to_xy_norm(hand_landmarks, image_shape: Tuple[int, int]) -> List[Tuple[float, float]]:
-    # MediaPipe provides normalized coords already; we simply extract (x, y)
+    """Extract (x, y) normalized landmarks from a MediaPipe hand landmarks object."""
     result = []
     for lm in hand_landmarks.landmark:
         result.append((float(lm.x), float(lm.y)))
