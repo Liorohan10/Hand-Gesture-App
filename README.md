@@ -1,6 +1,7 @@
 # Real-Time Static Hand Gesture Recognition
 
 Author: Rohan Ganguly
+
 Email ID: rohan.ganguly2806@gmail.com
 
 ## Overview
@@ -59,7 +60,7 @@ python src\app.py --device 0 --width 960 --height 540 --record assets\demo.mp4
 - `--headless`: run without opening a window (useful on systems missing OpenCV GUI support; combine with `--record`).
 
 ## Demo
-Add a short screen recording showing all four gestures working in real time to `assets/demo.mp4` or `assets/demo.gif`. If you prefer to host it elsewhere, paste the link here.
+[Demo](https://github.com/Liorohan10/Hand-Gesture-App/tree/main/assets/demo.mp4)
 
 ## Notes
 - Tested on Windows with a standard integrated webcam. If you have multiple cameras, you can change the device index in `app.py`.
