@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+.env/
+.DS_Store
+.vscode/
+.idea/
+*.mp4
+*.avi
+*.mov
+assets/demo.gif
+assets/demo.mp4
