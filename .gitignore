@@ -5,8 +5,5 @@ __pycache__/
 .DS_Store
 .vscode/
 .idea/
-*.mp4
 *.avi
 *.mov
-assets/demo.gif
-assets/demo.mp4
