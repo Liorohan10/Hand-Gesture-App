@@ -1,6 +1,7 @@
 # Real-Time Static Hand Gesture Recognition
 
-Author: Your Name Here
+Author: Rohan Ganguly
+Email ID: rohan.ganguly2806@gmail.com
 
 ## Overview
 This Python app recognizes four static hand gestures from a webcam in real time:
@@ -75,17 +76,3 @@ Add a short screen recording showing all four gestures working in real time to `
 		 python src\app.py --headless --record assets\demo.mp4
 		 ```
   - If using WSL, run from Windows Python or enable X server.
-
-## Project Structure
-
-- `src/app.py`: Main entry; webcam loop, MediaPipe inference, drawing, overlay, CLI.
-- `src/gesture_classifier.py`: Rules-based classifier using 2D landmarks.
-- `tests/test_classifier.py`: Minimal sanity tests for rules.
-- `requirements.txt`: Dependencies.
-- `assets/`: Put your demo recording here.
-
-## Submission Checklist
-- [ ] Repo is public and contains source code and `requirements.txt`.
-- [ ] `README.md` filled with your name, tech justification, gesture logic, and run steps.
-- [ ] `assets/demo.mp4` or a link to a recording showing all four gestures.
-- [ ] Email the repo link to: support@bhatiyaniai.com (Attention: Adhip Sarda) by 02/09/2025, 5pm IST.
